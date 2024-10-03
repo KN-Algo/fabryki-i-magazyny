@@ -39,11 +39,39 @@
       <h2>Magazyny: 🔴</h2>
       <h2>Fabryki: 🔵</h2>
       <h2>Pozostałe magazyny: <span id="remainingWarehouses">4</span></h2>
-      <h2>Całkowita odległość: <span id="length">0</span></h2>
     </div>
   </div>
 
   <script>
+
+    let index = null;
+    let username = null;
+
+    // Inicjalizacja okna powitalnego
+    window.onload = () => {
+      const { value: formValues } = Swal.fire({
+        title: 'Witaj w grze Fabryki i Magazyny!',
+        html: `
+          <div style="text-align: center; font-size: 14px; display: inline-block">
+            <p>Aby rozpocząć, dodaj 4 magazyny na mapie. Następnie połącz fabryki z magazynami, aby zminimalizować całkowitą odległość.</p>
+            <p>Kliknij na mapie, aby dodać magazyn. Po dodaniu wszystkich magazynów, zaznacz dowolną fabrykę i połącz ją z magazynami.</p>
+            <input id="swal-input1" class="swal2-input" placeholder="Podaj swój nick" style="width: 50%; box-sizing: border-box;" required>
+            <input id="swal-input2" class="swal2-input" placeholder="Podaj swój numer indeksu" style="width: 50%; box-sizing: border-box;" required>
+          </div>
+        `,
+        icon: 'info',
+        confirmButtonText: 'Rozpocznij',
+        footer: "Biorąc udział w grze, zgadzasz się na przetwarzanie swoich danych osobowych w celu ewentualnego przyznania nagrody.",
+        focusConfirm: false,
+        width: '600px',
+        preConfirm: () => {
+          username = document.getElementById('swal-input1').value;
+          index = document.getElementById('swal-input2').value;
+          console.log(username, index);
+        }
+      });
+    };
+
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     const remainingWarehousesSpan = document.getElementById('remainingWarehouses');
@@ -56,14 +84,37 @@
     const POINT_RADIUS = 5; // Standardowy rozmiar punktów
     const HIGHLIGHT_RADIUS = 7; // Rozmiar punktów po podświetleniu
     const CLICK_THRESHOLD = 10; // Maksymalna odległość w pikselach do wybrania punktu
+    const GRID_SIZE = 20; // Rozmiar pojedynczego kwadratu siatki
 
-    // Losowe generowanie fabryk
+    // Funkcja rysująca siatkę
+    function drawGrid() {
+      ctx.strokeStyle = '#e0e0e0'; // Ustawienie koloru siatki na delikatną szarość
+      for (let x = 0; x <= canvas.width; x += GRID_SIZE) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= canvas.height; y += GRID_SIZE) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+    }
+
+    // Przyciąganie do siatki
+    function snapToGrid(value) {
+      return Math.round(value / GRID_SIZE) * GRID_SIZE;
+    }
+
+    // Losowe generowanie fabryk, przyciągane do siatki
     function generateFactories(numFactories) {
+      drawGrid();
       for (let i = 0; i < numFactories; i++) {
-        const factory = {
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
-        };
+        let x = snapToGrid(Math.random() * canvas.width);
+        let y = snapToGrid(Math.random() * canvas.height);
+        const factory = { x, y };
         factories.push(factory);
         drawPoint(factory.x, factory.y, 'blue');
       }
@@ -78,20 +129,24 @@
       ctx.closePath();
     }
 
-    // Event do dodawania magazynów przez użytkownika
+    // Event do dodawania magazynów przez użytkownika, przyciągane do siatki
     canvas.addEventListener('click', (event) => {
       if (remainingWarehouses > 0) {
         const rect = canvas.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
+        let x = snapToGrid(event.clientX - rect.left);
+        let y = snapToGrid(event.clientY - rect.top);
         const warehouse = { x, y };
         warehouses.push(warehouse);
         drawPoint(x, y, 'red');
         remainingWarehouses--;
         remainingWarehousesSpan.textContent = remainingWarehouses;
-
         if (remainingWarehouses === 0) {
-          alert("Możesz teraz rysować linie łączące!");
+          Swal.fire ({
+            title: 'Udało się!',
+            text: 'Wszystkie magazyny zostały dodane. Możesz teraz łączyć fabryki z magazynami.',
+            icon: 'success',
+            confirmButtonText: 'Rozpocznij rysowanie linii'
+          });
         }
       } else {
         handleLineDrawing(event); // Uruchamianie rysowania linii po kliknięciu
@@ -115,43 +170,74 @@
       return nearestPoint;
     }
 
-    // Obsługa rysowania linii
     function handleLineDrawing(event) {
+      ctx.strokeStyle = 'black'; // Ustawienie koloru linii na czarny
       const rect = canvas.getBoundingClientRect();
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
       const selectedPoint = findNearestPoint(x, y); // Znajdujemy najbliższy punkt
-
+    
       if (!selectedPoint) {
         return; // Jeśli nie znaleziono punktu w pobliżu, nic nie robimy
       }
-
+    
       if (!selectedStart) {
         // Jeśli nie ma wybranego punktu początkowego, wybieramy punkt i podświetlamy go na fioletowo
         selectedStart = selectedPoint;
         drawAllPoints(); // Odtworzenie wszystkich punktów (aby zresetować podświetlenie innych)
         drawPoint(selectedStart.x, selectedStart.y, '#800080', true); // Podświetlanie na fioletowo
       } else {
-        // Jeśli jest już wybrany punkt początkowy, łączymy go z wybranym punktem końcowym
-        if (selectedStart !== selectedPoint) {
-          drawLine(selectedStart, selectedPoint);
-          const distance = calculateDistance(selectedStart, selectedPoint);
-          lines.push({ start: selectedStart, end: selectedPoint, distance });
-
-          // Dodajemy odległość do całkowitej odległości TYLKO raz
-          totalLength += parseFloat(distance);
-          document.getElementById('length').textContent = totalLength.toFixed(2);
-
-          drawDistanceLabel(selectedStart, selectedPoint, distance);
+        // Jeśli użytkownik kliknął na już wybraną fabrykę, odznacz ją
+        if (selectedStart === selectedPoint) {
+          selectedStart = null;
+          drawAllPoints(); // Resetowanie podświetlenia
+          return;
         }
+    
+        // Sprawdzanie, czy linia już istnieje
+        const lineExists = lines.some(line =>
+          (line.start === selectedStart && line.end === selectedPoint) ||
+          (line.start === selectedPoint && line.end === selectedStart)
+        );
+    
+        if (lineExists) {
+          const toastMixin = Swal.mixin({
+            toast: true,
+            icon: 'warning',
+            title: 'Ta linia już istnieje!',
+            position: 'top-right',
+            showConfirmButton: false,
+            timer: 2000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer)
+                toast.addEventListener('mouseleave', Swal.resumeTimer)
+            }
+          });
+          toastMixin.fire();
+          return; // Przerywamy jeśli linia już istnieje
+        }
+    
+        // Jeśli jest już wybrany punkt początkowy, łączymy go z wybranym punktem końcowym
+        drawLine(selectedStart, selectedPoint);
+        const distance = calculateDistance(selectedStart, selectedPoint);
+        lines.push({ start: selectedStart, end: selectedPoint, distance });
+    
+        // Dodajemy odległość do całkowitej odległości TYLKO raz
+        totalLength += parseFloat(distance);
+        console.log(`Całkowita odległość: ${totalLength.toFixed(2)}`);
+    
+        drawDistanceLabel(selectedStart, selectedPoint, distance);
         selectedStart = null; // Resetowanie punktu początkowego po narysowaniu linii
         drawAllPoints(); // Resetowanie podświetlenia
       }
     }
+    
 
     // Rysowanie wszystkich punktów (fabryki i magazyny) bez podświetlenia
     function drawAllPoints() {
       ctx.clearRect(0, 0, canvas.width, canvas.height); // Czyścimy canvas przed odrysowaniem wszystkich elementów
+      drawGrid(); // Rysowanie siatki
       factories.forEach(factory => drawPoint(factory.x, factory.y, 'blue'));
       warehouses.forEach(warehouse => drawPoint(warehouse.x, warehouse.y, 'red'));
       lines.forEach(line => {
@@ -162,6 +248,7 @@
 
     // Rysowanie linii
     function drawLine(start, end) {
+      ctx.strokeStyle = 'black';
       ctx.beginPath();
       ctx.moveTo(start.x, start.y);
       ctx.lineTo(end.x, end.y);
@@ -185,7 +272,7 @@
     }
 
     // Uruchomienie gry
-    generateFactories(7); // N fabryk, np. 5
+    generateFactories(7); // Generowanie fabryk, np. 7
 
   </script>
 </body>

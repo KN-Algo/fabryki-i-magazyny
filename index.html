@@ -6,10 +6,12 @@
   <title>Fabryki i Magazyny - Rysowanie Linii</title>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
     body {
       display: flex;
       flex-direction: column;
       margin: 0;
+      font-family: 'JetBrains Mono', monospace;
     }
     h1 {
         margin: 3rem;
@@ -44,6 +46,23 @@
       background-color: #0074ba; /* Kolor postępu */
     }
     
+    #endGameButton {
+      margin-top: 10px;
+      padding: 10px 20px;
+      color: white;
+      background-color: #0074ba;
+      border: 1px solid #0074ba;
+      cursor: pointer;
+      border-radius: 25px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    #endGameButton:hover {
+      background-color: white;
+      color: #0074ba;
+      border: 1px solid #0074ba;
+      transition: 0.4s all;
+    }
   </style>
 </head>
 <body>
@@ -57,6 +76,7 @@
       <h2>Magazyny: 🔴</h2>
       <h2>Fabryki: 🔵</h2>
       <h2>Pozostałe magazyny: <span id="remainingWarehouses">4</span></h2>
+      <button id="endGameButton">Zakończ grę</button>
     </div>
   </div>
 
@@ -70,17 +90,19 @@
       const { value: formValues } = Swal.fire({
         title: 'Witaj w grze Fabryki i Magazyny!',
         html: `
-          <div style="text-align: center; font-size: 14px; display: inline-block">
-            <p>Aby rozpocząć, dodaj 4 magazyny na mapie. Następnie połącz fabryki z magazynami, aby zminimalizować całkowitą odległość.</p>
-            <p>Kliknij na mapie, aby dodać magazyn. Po dodaniu wszystkich magazynów, zaznacz dowolną fabrykę i połącz ją z magazynami.</p>
-            <input id="swal-input1" class="swal2-input" placeholder="Podaj swój nick" style="width: 50%; box-sizing: border-box;" required>
-            <input id="swal-input2" class="swal2-input" placeholder="Podaj swój numer indeksu" style="width: 50%; box-sizing: border-box;" required>
+          <div style="text-align: left; font-size: 14px; display: inline-block">
+            <p>Twoim zadaniem jest połączenie fabryk z magazynami za pomocą linii. Kliknij na mapie, aby dodać magazyn. Po dodaniu wszystkich magazynów, zaznacz dowolną fabrykę i połącz ją z magazynami. Celem gry jest zminimalizowanie całkowitej długości tras. Im krótsza trasa, tym lepiej!</p>
+            <p>Ukończ zadanie, zanim pasek na górze strony dobiegnie końca. Powodzenia!</p>
+            <input id="swal-input1" class="swal2-input" placeholder="Podaj swój nick" style="width: 90%; box-sizing: border-box;" required>
+            <input id="swal-input2" class="swal2-input" placeholder="Podaj swój numer indeksu" style="width: 90%; box-sizing: border-box;" required>
           </div>
         `,
         icon: 'info',
         confirmButtonText: 'Rozpocznij',
         footer: "Biorąc udział w grze, zgadzasz się na przetwarzanie swoich danych osobowych w celu ewentualnego przyznania nagrody.",
         focusConfirm: false,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
         width: '600px',
         preConfirm: () => {
           username = document.getElementById('swal-input1').value;
@@ -102,6 +124,7 @@
     let remainingWarehouses = 4; // Liczba magazynów do postawienia
     let totalLength = 0;
     let isCanvasLocked = false;
+    let timeRemaining = null;
     const POINT_RADIUS = 5; // Standardowy rozmiar punktów
     const HIGHLIGHT_RADIUS = 7; // Rozmiar punktów po podświetleniu
     const CLICK_THRESHOLD = 10; // Maksymalna odległość w pikselach do wybrania punktu
@@ -299,7 +322,7 @@
 
     function startTimer(duration) {
       const timerBar = document.getElementById('timer');
-      let timeRemaining = duration;
+      timeRemaining = duration;
     
       timerInterval = setInterval(() => {
         timeRemaining--;
@@ -322,6 +345,35 @@
     }
     
 
+    document.getElementById('endGameButton').addEventListener('click', () => {
+      Swal.fire({
+        title: 'Czy na pewno chcesz zakończyć grę?',
+        text: "Zakończenie gry spowoduje zapisanie wyników.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Tak, zakończ',
+        cancelButtonText: 'Nie, kontynuuj',
+      }).then((result) => {
+        if (result.isConfirmed) {
+          clearInterval(timerInterval); // Zatrzymanie timera
+          isCanvasLocked = true; // Blokowanie canvasu
+    
+          const timeElapsed = 180 - timeRemaining; // Obliczenie czasu, który upłynął
+          //TODO: Porównać długość tras z optymalną trasą
+          Swal.fire({
+            title: 'Gra zakończona!',
+            text: `Upłynęło: ${timeElapsed} sekund.\nCałkowita długość tras: ${totalLength.toFixed(2)}.`,
+            icon: 'success',
+            confirmButtonText: 'OK'
+          }).then(() => {
+            console.log(`Czas: ${timeElapsed} sekund`);
+            console.log(`Całkowita długość tras: ${totalLength.toFixed(2)} jednostek`);
+            // Dalsza logika zapisu wyników
+          });
+        }
+      });
+    });
+    
     // Uruchomienie gry
     generateFactories(7); // Generowanie fabryk, np. 7
 

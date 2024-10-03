@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fabryki i Magazyny - Rysowanie Linii</title>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      margin: 0;
+    }
+    h1 {
+        margin: 3rem;
+        text-align: center;
+    }
+    canvas {
+      border: 1px solid black;
+      justify-content: center;
+      align-items: center;
+    }
+    div {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #sidebar {
+      display: inline-block;
+      margin-left: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Fabryki i Magazyny</h1>
+  <div style="display: flex;">
+    <canvas id="canvas" width="600" height="400"></canvas>
+    <div id="sidebar">
+      <h2>Magazyny: 🔴</h2>
+      <h2>Fabryki: 🔵</h2>
+      <h2>Pozostałe magazyny: <span id="remainingWarehouses">4</span></h2>
+      <h2>Całkowita odległość: <span id="length">0</span></h2>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const remainingWarehousesSpan = document.getElementById('remainingWarehouses');
+    const factories = [];
+    const warehouses = [];
+    let selectedStart = null;
+    let lines = [];
+    let remainingWarehouses = 4; // Liczba magazynów do postawienia
+    let totalLength = 0;
+    const POINT_RADIUS = 5; // Standardowy rozmiar punktów
+    const HIGHLIGHT_RADIUS = 7; // Rozmiar punktów po podświetleniu
+    const CLICK_THRESHOLD = 10; // Maksymalna odległość w pikselach do wybrania punktu
+
+    // Losowe generowanie fabryk
+    function generateFactories(numFactories) {
+      for (let i = 0; i < numFactories; i++) {
+        const factory = {
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+        };
+        factories.push(factory);
+        drawPoint(factory.x, factory.y, 'blue');
+      }
+    }
+
+    // Rysowanie punktów fabryk/magazynów
+    function drawPoint(x, y, color, highlight = false) {
+      ctx.beginPath();
+      ctx.arc(x, y, highlight ? HIGHLIGHT_RADIUS : POINT_RADIUS, 0, Math.PI * 2, true); // Zwiększamy rozmiar przy podświetleniu
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.closePath();
+    }
+
+    // Event do dodawania magazynów przez użytkownika
+    canvas.addEventListener('click', (event) => {
+      if (remainingWarehouses > 0) {
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        const warehouse = { x, y };
+        warehouses.push(warehouse);
+        drawPoint(x, y, 'red');
+        remainingWarehouses--;
+        remainingWarehousesSpan.textContent = remainingWarehouses;
+
+        if (remainingWarehouses === 0) {
+          alert("Możesz teraz rysować linie łączące!");
+        }
+      } else {
+        handleLineDrawing(event); // Uruchamianie rysowania linii po kliknięciu
+      }
+    });
+
+    // Funkcja znajdowania najbliższego punktu (fabryki lub magazynu)
+    function findNearestPoint(x, y) {
+      const allPoints = factories.concat(warehouses);
+      let nearestPoint = null;
+      let minDistance = Infinity;
+
+      allPoints.forEach(point => {
+        const distance = calculateDistance({ x, y }, point);
+        if (distance < minDistance && distance <= CLICK_THRESHOLD) { // Warunek minimalnej odległości
+          minDistance = distance;
+          nearestPoint = point;
+        }
+      });
+
+      return nearestPoint;
+    }
+
+    // Obsługa rysowania linii
+    function handleLineDrawing(event) {
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      const selectedPoint = findNearestPoint(x, y); // Znajdujemy najbliższy punkt
+
+      if (!selectedPoint) {
+        return; // Jeśli nie znaleziono punktu w pobliżu, nic nie robimy
+      }
+
+      if (!selectedStart) {
+        // Jeśli nie ma wybranego punktu początkowego, wybieramy punkt i podświetlamy go na fioletowo
+        selectedStart = selectedPoint;
+        drawAllPoints(); // Odtworzenie wszystkich punktów (aby zresetować podświetlenie innych)
+        drawPoint(selectedStart.x, selectedStart.y, '#800080', true); // Podświetlanie na fioletowo
+      } else {
+        // Jeśli jest już wybrany punkt początkowy, łączymy go z wybranym punktem końcowym
+        if (selectedStart !== selectedPoint) {
+          drawLine(selectedStart, selectedPoint);
+          const distance = calculateDistance(selectedStart, selectedPoint);
+          lines.push({ start: selectedStart, end: selectedPoint, distance });
+
+          // Dodajemy odległość do całkowitej odległości TYLKO raz
+          totalLength += parseFloat(distance);
+          document.getElementById('length').textContent = totalLength.toFixed(2);
+
+          drawDistanceLabel(selectedStart, selectedPoint, distance);
+        }
+        selectedStart = null; // Resetowanie punktu początkowego po narysowaniu linii
+        drawAllPoints(); // Resetowanie podświetlenia
+      }
+    }
+
+    // Rysowanie wszystkich punktów (fabryki i magazyny) bez podświetlenia
+    function drawAllPoints() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height); // Czyścimy canvas przed odrysowaniem wszystkich elementów
+      factories.forEach(factory => drawPoint(factory.x, factory.y, 'blue'));
+      warehouses.forEach(warehouse => drawPoint(warehouse.x, warehouse.y, 'red'));
+      lines.forEach(line => {
+        drawLine(line.start, line.end); // Odtwarzamy narysowane linie
+        drawDistanceLabel(line.start, line.end, line.distance); // Odtwarzamy wyświetlanie odległości nad liniami
+      });
+    }
+
+    // Rysowanie linii
+    function drawLine(start, end) {
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.stroke();
+    }
+
+    // Obliczanie odległości pomiędzy punktami
+    function calculateDistance(point1, point2) {
+      const dx = point1.x - point2.x;
+      const dy = point1.y - point2.y;
+      return Math.sqrt(dx * dx + dy * dy).toFixed(2);
+    }
+
+    // Wyświetlanie odległości nad linią
+    function drawDistanceLabel(start, end, distance) {
+      const midX = (start.x + end.x) / 2;
+      const midY = (start.y + end.y) / 2;
+      ctx.font = '12px Arial';
+      ctx.fillStyle = 'black';
+      ctx.fillText(`${distance}`, midX, midY);
+    }
+
+    // Uruchomienie gry
+    generateFactories(7); // N fabryk, np. 5
+
+  </script>
+</body>
+</html>

@@ -347,7 +347,8 @@
     function calculateDistance(point1, point2) {
       const dx = point1.x - point2.x;
       const dy = point1.y - point2.y;
-      return Math.sqrt(dx * dx + dy * dy).toFixed(2);
+      let distance = Math.sqrt(dx * dx + dy * dy);
+      return Math.round(distance);
     }
 
     // Wyświetlanie odległości nad linią
@@ -401,13 +402,39 @@
           //TODO: Porównać długość tras z optymalną trasą
           Swal.fire({
             title: 'Gra zakończona!',
-            text: `Upłynęło: ${timeElapsed} sekund.\nCałkowita długość tras: ${totalLength.toFixed(2)}.`,
+            text: `Upłynęło: ${Math.round(timeElapsed)} sekund.\nCałkowita długość tras: ${Math.round(totalLength)}.`,
             icon: 'success',
             confirmButtonText: 'OK'
           }).then(() => {
-            console.log(`Czas: ${timeElapsed} sekund`);
-            console.log(`Całkowita długość tras: ${totalLength.toFixed(2)} jednostek`);
-            // Dalsza logika zapisu wyników
+            console.log(`Czas: ${Math.round(timeElapsed)} sekund`);
+            console.log(`Całkowita długość tras: ${Math.round(totalLength)} jednostek`);
+          }).then(() => {
+            // Wysyłamy wyniki do serwera
+            let formData = new FormData();
+            formData.append('username', username);
+            formData.append('index', index);
+            formData.append('time', timeElapsed);
+            formData.append('distance', totalLength);
+            console.log(formData);
+            return fetch('/backend/api/saveResults.php', {
+              method: 'POST',
+              body: formData
+            })
+            .then(response => {
+              return response.json().then(data => {
+                if (data.code !== 200) {
+                  throw new Error(data.error);
+                }
+              });
+            })
+            .catch(error => {
+              Swal.fire({
+                title: 'Błąd!',
+                text: `${error.message}`,
+                icon: 'error',
+                confirmButtonText: 'OK'
+              });
+            });
           });
         }
       });

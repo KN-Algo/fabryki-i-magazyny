@@ -24,7 +24,7 @@ if (strlen($index) != 6) {
     exit();
 }
 
-if (!is_array($database->checkIfUsernameOrIndexExists($username, $index))) {
+if ($database->checkIfUsernameOrIndexExists($username, $index)) {
     echo json_encode(['error' => 'Użytkownik o podanym indeksie lub nazwie użytkownika już istnieje', 'code' => 400, 'line' => __LINE__]);
     exit();
 }

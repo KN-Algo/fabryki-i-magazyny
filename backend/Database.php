@@ -32,13 +32,20 @@ class Database {
         return $success;
     }
 
-    public function saveTime($user_index, $username, $time, $distance_diff) {
-        $stmt = $this->database->prepare('INSERT INTO ranking (user_index, username, time, distance_diff) VALUES (:user_index, :username, :time, :distance_diff)');
-        $stmt->bindValue(':user_index', $user_index, SQLITE3_INTEGER);
-        $stmt->bindValue(':username', $username, SQLITE3_TEXT);
-        $stmt->bindValue(':time', $time, SQLITE3_INTEGER);
-        $stmt->bindValue(':distance_diff', $distance_diff, SQLITE3_INTEGER);
-        $stmt->execute();
+    public function saveTime($user_index, $username, $time, $distance_diff) : bool {
+        $success = false;
+        try {
+            $stmt = $this->database->prepare('INSERT INTO ranking (user_index, username, time, distance_diff) VALUES (:user_index, :username, :time, :distance_diff)');
+            $stmt->bindValue(':user_index', $user_index, SQLITE3_INTEGER);
+            $stmt->bindValue(':username', $username, SQLITE3_TEXT);
+            $stmt->bindValue(':time', $time, SQLITE3_INTEGER);
+            $stmt->bindValue(':distance_diff', $distance_diff, SQLITE3_INTEGER);
+            $stmt->execute();
+            $success = true;
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
+        return $success;
     }
 
     public function getRanking() {
@@ -71,12 +78,17 @@ class Database {
         return array_values($userRanking); // Re-index the array
     }
 
-    public function checkIfUsernameOrIndexExists($username, $user_index) {
-        $stmt = $this->database->prepare('SELECT COUNT(id) FROM ranking WHERE username=:username OR user_index=:user_index');
-        $stmt->bindValue(':username', $username, SQLITE3_TEXT);
-        $stmt->bindValue(':user_index', $user_index, SQLITE3_INTEGER);
-        $result = $stmt->execute();
-        $row = $result->fetchArray(SQLITE3_ASSOC);
-        return $row;
+    public function checkIfUsernameOrIndexExists($username, $user_index) : bool {
+        $exists = false;
+        try {
+            $stmt = $this->database->prepare('SELECT * FROM ranking WHERE username = :username OR user_index = :user_index');
+            $stmt->bindValue(':username', $username, SQLITE3_TEXT);
+            $stmt->bindValue(':user_index', $user_index, SQLITE3_INTEGER);
+            $result = $stmt->execute();
+            $exists = $result->fetchArray() !== false;
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
+        return $exists;
     }
 }

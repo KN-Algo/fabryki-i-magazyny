@@ -105,14 +105,53 @@
         allowEscapeKey: false,
         width: '600px',
         preConfirm: () => {
+          // Pobieramy dane użytkownika z popupu
           username = document.getElementById('swal-input1').value;
           index = document.getElementById('swal-input2').value;
-          console.log(username, index);
+
+          if (!username || !index) {
+            Swal.showValidationMessage('Wszystkie pola są wymagane!');
+            return;
+          }
+
+          let regex = /^[0-9]{6}$/;
+          if (!regex.test(index)) {
+            Swal.showValidationMessage('Numer indeksu musi składać się z 6 cyfr!');
+            return;
+          }
+
+          // Wysyłamy dane użytkownika do serwera
+          let formData = new FormData();
+          formData.append('username', username);
+          formData.append('index', index);
+          console.log(formData);
+          return fetch('/backend/api/validateUser.php', {
+            method: 'POST',
+            body: formData
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Błąd połączenia z serwerem! Spróbuj ponownie.');
+            } else {
+              return response.json().then(data => {
+                if (data.code === 400) {
+                  throw new Error(data.error);
+                }
+              });
+            }
+          })
+          .catch(error => {
+            // Wyświetlamy komunikat o błędzie w popupie bez jego zamykania
+            Swal.showValidationMessage(`${error.message}`);
+            return;
+          });
         }
-        }).then(() => {
-          startTimer(180); // Uruchamianie timera na 3 minuty
+      }).then((result) => {
+        startTimer(180); // Uruchamiamy timer na 3 minuty
       });
     };
+    
+    
 
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');

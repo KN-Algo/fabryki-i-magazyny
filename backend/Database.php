@@ -8,8 +8,6 @@ class Database {
         $this->database = new SQLite3('database.db');
         if (!$this->prepareDatabase()) {
             echo 'Database preparation failed';
-        } else {
-            echo 'Database prepared';
         }
     }
 
@@ -22,7 +20,7 @@ class Database {
         try {
             $success = $this->database->exec('CREATE TABLE IF NOT EXISTS `ranking` (
                 `id` integer primary key NOT NULL UNIQUE,
-                `index` INTEGER NOT NULL UNIQUE,
+                `user_index` INTEGER NOT NULL UNIQUE,
                 `username` TEXT NOT NULL UNIQUE,
                 `time` INTEGER NOT NULL,
                 `distance_diff` INTEGER NOT NULL
@@ -34,9 +32,9 @@ class Database {
         return $success;
     }
 
-    public function saveTime($index, $username, $time, $distance_diff) {
-        $stmt = $this->database->prepare('INSERT INTO ranking (index, username, time, distance_diff) VALUES (:index, :username, :time, :distance_diff)');
-        $stmt->bindValue(':index', $index, SQLITE3_INTEGER);
+    public function saveTime($user_index, $username, $time, $distance_diff) {
+        $stmt = $this->database->prepare('INSERT INTO ranking (user_index, username, time, distance_diff) VALUES (:user_index, :username, :time, :distance_diff)');
+        $stmt->bindValue(':user_index', $user_index, SQLITE3_INTEGER);
         $stmt->bindValue(':username', $username, SQLITE3_TEXT);
         $stmt->bindValue(':time', $time, SQLITE3_INTEGER);
         $stmt->bindValue(':distance_diff', $distance_diff, SQLITE3_INTEGER);
@@ -64,10 +62,10 @@ class Database {
         return $ranking;
     }
 
-    public function checkIfUsernameOrIndexExists($username, $index) {
-        $stmt = $this->database->prepare('SELECT COUNT(id) FROM ranking WHERE username = :username OR index = :index');
+    public function checkIfUsernameOrIndexExists($username, $user_index) {
+        $stmt = $this->database->prepare('SELECT COUNT(id) FROM ranking WHERE username=:username OR user_index=:user_index');
         $stmt->bindValue(':username', $username, SQLITE3_TEXT);
-        $stmt->bindValue(':index', $index, SQLITE3_INTEGER);
+        $stmt->bindValue(':user_index', $user_index, SQLITE3_INTEGER);
         $result = $stmt->execute();
         $row = $result->fetchArray(SQLITE3_ASSOC);
         return $row;

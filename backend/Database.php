@@ -42,7 +42,7 @@ class Database {
     }
 
     public function getRanking() {
-        $stmt = $this->database->prepare('SELECT username, time, distance_diff FROM ranking ORDER BY time ASC');
+        $stmt = $this->database->prepare('SELECT username, time, distance_diff FROM ranking ORDER BY distance_diff DESC, time DESC LIMIT 10');
         $result = $stmt->execute();
         $ranking = [];
         while ($row = $result->fetchArray(SQLITE3_ASSOC)) {

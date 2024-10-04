@@ -42,24 +42,33 @@ class Database {
     }
 
     public function getRanking() {
-        $stmt = $this->database->prepare('SELECT username, time, distance_diff FROM ranking ORDER BY distance_diff DESC, time DESC LIMIT 10');
+        $stmt = $this->database->prepare('SELECT username, time, distance_diff FROM ranking ORDER BY distance_diff ASC, time ASC LIMIT 10');
         $result = $stmt->execute();
         $ranking = [];
+        $position = 1;
         while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+            $row['position'] = $position++;
             $ranking[] = $row;
         }
         return $ranking;
     }
-
+    
     public function getRankingByUsername($username) {
-        $stmt = $this->database->prepare('SELECT username, time, distance_diff FROM ranking WHERE username = :username');
-        $stmt->bindValue(':username', $username, SQLITE3_TEXT);
+        $stmt = $this->database->prepare('SELECT username, time, distance_diff FROM ranking ORDER BY distance_diff ASC, time ASC');
         $result = $stmt->execute();
         $ranking = [];
+        $position = 1;
         while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+            $row['position'] = $position++;
             $ranking[] = $row;
         }
-        return $ranking;
+    
+        // Filter the ranking to find the specific user
+        $userRanking = array_filter($ranking, function($row) use ($username) {
+            return $row['username'] === $username;
+        });
+    
+        return array_values($userRanking); // Re-index the array
     }
 
     public function checkIfUsernameOrIndexExists($username, $user_index) {

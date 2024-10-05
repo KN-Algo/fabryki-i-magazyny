@@ -63,6 +63,19 @@
       border: 1px solid #0074ba;
       transition: 0.4s all;
     }
+
+    .button.active {
+      background-color: #005f87;
+      color: white;
+      box-shadow: inset 0px 0px 5px rgba(0, 0, 0, 0.5); /* Wciśnięty wygląd */
+    }
+
+    .button.active:hover {
+      background-color: #0074ba;
+      color: white;
+      transition: all 0.4s;
+    }
+    
   </style>
 </head>
 <body>
@@ -76,6 +89,7 @@
       <h2>Magazyny: 🔴</h2>
       <h2>Fabryki: 🔵</h2>
       <h2>Pozostałe magazyny: <span id="remainingWarehouses">4</span></h2>
+      <button id="eraserButton" class="button">Gumka</button>
       <button id="endGameButton" class="button">Zakończ grę</button>
       <a id="ranking-a" href=""><button class="button">Ranking</button></a>
     </div>
@@ -160,7 +174,7 @@
     };
     
     
-
+    let isEraserMode = false;
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     const remainingWarehousesSpan = document.getElementById('remainingWarehouses');
@@ -225,7 +239,12 @@
       if (isCanvasLocked) {
         return; // Jeśli canvas jest zablokowany, nie obsługujemy kliknięcia
       }
-    
+
+      if (isEraserMode) {
+        handleEraser(event); // Obsługa gumki
+        return;
+      }
+
       if (remainingWarehouses > 0) {
         const rect = canvas.getBoundingClientRect();
         let x = snapToGrid(event.clientX - rect.left);
@@ -247,6 +266,68 @@
         handleLineDrawing(event); // Uruchamianie rysowania linii po kliknięciu
       }
     });
+    
+    document.getElementById('eraserButton').addEventListener('click', () => {
+      isEraserMode = !isEraserMode; // Przełączanie trybu gumki
+      const eraserButton = document.getElementById('eraserButton');
+      if (isEraserMode) {
+        eraserButton.classList.add('active'); // Dodajemy klasę .active, jeśli tryb gumki jest włączony
+      } else {
+        eraserButton.classList.remove('active'); // Usuwamy klasę .active, jeśli tryb gumki jest wyłączony
+      }
+    });
+    
+
+    function handleEraser(event) {
+      if (!isEraserMode) return; // Jeśli tryb gumki nie jest aktywny, nic nie róbmy
+    
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+    
+      // Sprawdzamy, czy kliknięto na istniejącą linię
+      let lineIndex = null;
+      lines.forEach((line, index) => {
+        const distanceToLine = pointToLineDistance({ x, y }, line.start, line.end);
+        if (distanceToLine <= 5) { // Próg 5 pikseli na usunięcie
+          lineIndex = index;
+        }
+      });
+    
+      if (lineIndex !== null) {
+        lines.splice(lineIndex, 1); // Usuwamy linię z tablicy lines
+        drawAllPoints(); // Rysujemy ponownie, aby odświeżyć canvas bez usuniętej linii
+      }
+    }
+    
+    function pointToLineDistance(point, lineStart, lineEnd) {
+      const A = point.x - lineStart.x;
+      const B = point.y - lineStart.y;
+      const C = lineEnd.x - lineStart.x;
+      const D = lineEnd.y - lineStart.y;
+    
+      const dot = A * C + B * D;
+      const len_sq = C * C + D * D;
+      let param = -1;
+      if (len_sq !== 0) param = dot / len_sq;
+    
+      let xx, yy;
+    
+      if (param < 0) {
+        xx = lineStart.x;
+        yy = lineStart.y;
+      } else if (param > 1) {
+        xx = lineEnd.x;
+        yy = lineEnd.y;
+      } else {
+        xx = lineStart.x + param * C;
+        yy = lineStart.y + param * D;
+      }
+    
+      const dx = point.x - xx;
+      const dy = point.y - yy;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
     
 
     // Funkcja znajdowania najbliższego punktu (fabryki lub magazynu)

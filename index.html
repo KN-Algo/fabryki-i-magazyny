@@ -342,6 +342,26 @@
       });
     }
 
+    function checkConnections() {
+      const allPoints = factories.concat(warehouses); // Wszystkie punkty (fabryki i magazyny)
+      const connectedPoints = new Set(); // Zbiór punktów, które są połączone
+    
+      // Przechodzimy przez wszystkie połączenia w tablicy lines
+      lines.forEach(line => {
+        connectedPoints.add(line.start); // Dodajemy punkt startowy
+        connectedPoints.add(line.end);   // Dodajemy punkt końcowy
+      });
+    
+      // Sprawdzamy, czy każdy punkt (fabryka lub magazyn) ma połączenie
+      for (let point of allPoints) {
+        if (!connectedPoints.has(point)) {
+          return false; // Jeśli znajdziemy punkt bez połączenia, zwracamy false
+        }
+      }
+      
+      return true; // Jeśli każdy punkt ma połączenie, zwracamy true
+    }
+
     // Rysowanie linii
     function drawLine(start, end) {
       ctx.strokeStyle = 'black';
@@ -394,6 +414,17 @@
     
 
     document.getElementById('endGameButton').addEventListener('click', () => {
+      // Sprawdzamy, czy wszystkie punkty mają połączenie
+      if (!checkConnections()) {
+        Swal.fire({
+          title: 'Chwila!',
+          text: 'Nie wszystkie punkty na mapie są połączone! Upewnij się, że każda fabryka i magazyn ma co najmniej jedno połączenie.',
+          icon: 'warning',
+          confirmButtonText: 'OK'
+        });
+        return; // Przerywamy, jeśli punkty nie są połączone
+      }
+    
       Swal.fire({
         title: 'Czy na pewno chcesz zakończyć grę?',
         text: "Zakończenie gry spowoduje zapisanie wyników.",
@@ -446,6 +477,7 @@
         }
       });
     });
+    
     
     // Uruchomienie gry
     generateFactories(7); // Generowanie fabryk, np. 7

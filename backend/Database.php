@@ -48,8 +48,9 @@ class Database {
         return $success;
     }
 
-    public function getRanking() {
-        $stmt = $this->database->prepare('SELECT username, time, distance_diff FROM ranking ORDER BY distance_diff ASC, time ASC LIMIT 10');
+    public function getRanking($limit = 10) {
+        $stmt = $this->database->prepare('SELECT username, time, distance_diff FROM ranking ORDER BY distance_diff ASC, time ASC LIMIT :limit');
+        $stmt->bindValue(':limit', $limit, SQLITE3_INTEGER);
         $result = $stmt->execute();
         $ranking = [];
         $position = 1;
@@ -61,37 +62,48 @@ class Database {
     }
     
     public function getRankingByUsername($username) {
-        $stmt = $this->database->prepare('SELECT username, time, distance_diff FROM ranking ORDER BY distance_diff ASC, time ASC');
+        // Fetch top 10 records
+        $stmt = $this->database->prepare('SELECT username, time, distance_diff FROM ranking ORDER BY distance_diff ASC, time ASC LIMIT 10');
         $result = $stmt->execute();
         $ranking = [];
         $position = 1;
+        $user_in_top_10 = false;
+        $user_row = null;
+    
+        // Populate top 10 ranking
         while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
             $row['position'] = $position++;
+            if ($row['username'] === $username) {
+                $user_in_top_10 = true;
+                $user_row = $row; // Save user's row for later highlight
+            }
             $ranking[] = $row;
         }
     
-        // Find the user's position
-        $user_position = 0;
-        foreach ($ranking as $key => $value) {
-            if ($value['username'] === $username) {
-                $user_position = $key + 1;
-                break;
-            }
-        }
-
-        // If the user is not in the ranking, add him to the end
-        if ($user_position === 0) {
+        // If the user is not in the top 10, fetch their position
+        if (!$user_in_top_10) {
             $stmt = $this->database->prepare('SELECT username, time, distance_diff FROM ranking WHERE username = :username');
             $stmt->bindValue(':username', $username, SQLITE3_TEXT);
             $result = $stmt->execute();
-            while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                $row['position'] = count($ranking) + 1;
-                $ranking[] = $row;
+            $user_row = $result->fetchArray(SQLITE3_ASSOC);
+    
+            if ($user_row) {
+                // Calculate the user's position in the entire ranking
+                $stmt = $this->database->prepare('SELECT COUNT(*) as position FROM ranking WHERE distance_diff < :distance_diff OR (distance_diff = :distance_diff AND time < :time)');
+                $stmt->bindValue(':distance_diff', $user_row['distance_diff'], SQLITE3_FLOAT);
+                $stmt->bindValue(':time', $user_row['time'], SQLITE3_FLOAT);
+                $result = $stmt->execute();
+                $position_row = $result->fetchArray(SQLITE3_ASSOC);
+                $user_row['position'] = $position_row['position'] + 1;
+    
+                // Add the user's row at the end of the ranking
+                $ranking[] = $user_row;
             }
         }
-
+    
         return $ranking;
     }
+    
 
     public function checkIfUsernameOrIndexExists($username, $user_index) : bool {
         $exists = false;

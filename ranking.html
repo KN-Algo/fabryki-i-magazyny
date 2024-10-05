@@ -78,64 +78,77 @@
         const username = urlParams.get('username');
         console.log(username);
         let formData = null;
-
-        if (username !== null){
+    
+        if (username !== null) {
             formData = new FormData();
             formData.append('username', username);
         }
-
+    
         const response = await fetch('/backend/api/ranking.php', {
             method: 'POST',
             body: formData
         });
-
+    
         const data = await response.json();
         console.log(data);
-
+    
         const table = document.querySelector('table');
+        let userRow = null;
+    
+        // Iterate through the data and build table rows
         data.forEach(row => {
             const tr = document.createElement('tr');
+    
+            if (row.username === username) {
+                // Highlight the user row if they are in top 10
+                tr.classList.add('highlight');
+                userRow = row;  // Save the user's row if found in top 10
+            }
+    
             const place = document.createElement('td');
             const player = document.createElement('td');
             const distance = document.createElement('td');
             const time = document.createElement('td');
-
+    
             place.innerText = row.position;
             player.innerText = row.username;
             distance.innerText = row.distance_diff;
             time.innerText = row.time;
-
+    
             tr.appendChild(place);
             tr.appendChild(player);
             tr.appendChild(distance);
             tr.appendChild(time);
-
+    
             table.appendChild(tr);
         });
-
-        if (username !== null) {
-            const userRow = data.find(row => row.username === username);
+    
+        // If the user is not in top 10, add their row at the end
+        if (!userRow && username !== null) {
+            userRow = data.find(row => row.username === username);
+    
             if (userRow) {
                 const tr = document.createElement('tr');
-                tr.classList.add('highlight');
+                tr.classList.add('highlight');  // Highlight user's row
+    
                 const place = document.createElement('td');
                 const player = document.createElement('td');
                 const distance = document.createElement('td');
                 const time = document.createElement('td');
-
+    
                 place.innerText = userRow.position;
                 player.innerText = userRow.username;
                 distance.innerText = userRow.distance_diff;
                 time.innerText = userRow.time;
-
+    
                 tr.appendChild(place);
                 tr.appendChild(player);
                 tr.appendChild(distance);
                 tr.appendChild(time);
-
+    
                 table.appendChild(tr);
             }
         }
-    }
+    };    
 </script>
 </html>

@@ -5,7 +5,7 @@ class Database {
     private $database = null;
 
     function __construct() {
-        $this->database = new SQLite3('database.db');
+        $this->database = new SQLite3(__DIR__.'/../database.db');
         if (!$this->prepareDatabase()) {
             echo 'Database preparation failed';
         }
@@ -70,12 +70,27 @@ class Database {
             $ranking[] = $row;
         }
     
-        // Filter the ranking to find the specific user
-        $userRanking = array_filter($ranking, function($row) use ($username) {
-            return $row['username'] === $username;
-        });
-    
-        return array_values($userRanking); // Re-index the array
+        // Find the user's position
+        $user_position = 0;
+        foreach ($ranking as $key => $value) {
+            if ($value['username'] === $username) {
+                $user_position = $key + 1;
+                break;
+            }
+        }
+
+        // If the user is not in the ranking, add him to the end
+        if ($user_position === 0) {
+            $stmt = $this->database->prepare('SELECT username, time, distance_diff FROM ranking WHERE username = :username');
+            $stmt->bindValue(':username', $username, SQLITE3_TEXT);
+            $result = $stmt->execute();
+            while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                $row['position'] = count($ranking) + 1;
+                $ranking[] = $row;
+            }
+        }
+
+        return $ranking;
     }
 
     public function checkIfUsernameOrIndexExists($username, $user_index) : bool {

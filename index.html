@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -46,7 +46,7 @@
       background-color: #0074ba; /* Kolor postępu */
     }
     
-    #endGameButton {
+    .button {
       margin-top: 10px;
       padding: 10px 20px;
       color: white;
@@ -57,7 +57,7 @@
       font-family: 'JetBrains Mono', monospace;
     }
 
-    #endGameButton:hover {
+    .button:hover {
       background-color: white;
       color: #0074ba;
       border: 1px solid #0074ba;
@@ -76,7 +76,8 @@
       <h2>Magazyny: 🔴</h2>
       <h2>Fabryki: 🔵</h2>
       <h2>Pozostałe magazyny: <span id="remainingWarehouses">4</span></h2>
-      <button id="endGameButton">Zakończ grę</button>
+      <button id="endGameButton" class="button">Zakończ grę</button>
+      <a id="ranking-a" href=""><button class="button">Ranking</button></a>
     </div>
   </div>
 
@@ -99,11 +100,17 @@
         `,
         icon: 'info',
         confirmButtonText: 'Rozpocznij',
+        showDenyButton: true,
+        denyButtonColor: '#0074ba',
+        denyButtonText: 'Ranking',
         footer: "Biorąc udział w grze, zgadzasz się na przetwarzanie swoich danych osobowych w celu ewentualnego przyznania nagrody.",
         focusConfirm: false,
         allowOutsideClick: false,
         allowEscapeKey: false,
         width: '600px',
+        preDeny : () => {
+          window.location.href = 'ranking.html';
+        },
         preConfirm: () => {
           // Pobieramy dane użytkownika z popupu
           username = document.getElementById('swal-input1').value;
@@ -147,6 +154,7 @@
           });
         }
       }).then((result) => {
+        document.getElementById('ranking-a').href = `ranking.html?username=${username}`;
         startTimer(180); // Uruchamiamy timer na 3 minuty
       });
     };
@@ -399,7 +407,6 @@
           isCanvasLocked = true; // Blokowanie canvasu
     
           const timeElapsed = 180 - timeRemaining; // Obliczenie czasu, który upłynął
-          //TODO: Porównać długość tras z optymalną trasą
           Swal.fire({
             title: 'Gra zakończona!',
             text: `Upłynęło: ${Math.round(timeElapsed)} sekund.\nCałkowita długość tras: ${Math.round(totalLength)}.`,

@@ -88,6 +88,7 @@
     <div id="sidebar">
       <h2>Magazyny: 🔴</h2>
       <h2>Fabryki: 🔵</h2>
+      <h2>Magazyn na fabryce: 🟢</h2>
       <h2>Pozostałe magazyny: <span id="remainingWarehouses">4</span></h2>
       <button id="eraserButton" class="button">Gumka</button>
       <button id="endGameButton" class="button">Zakończ grę</button>
@@ -208,6 +209,16 @@
       }
     }
 
+    function isOverFactory(x, y) {
+      return factories.find(factory => {
+        const dx = x - factory.x;
+        const dy = y - factory.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        return distance <= POINT_RADIUS; // Punkt znajduje się w obrębie fabryki
+      });
+    }
+    
+
     // Przyciąganie do siatki
     function snapToGrid(value) {
       return Math.round(value / GRID_SIZE) * GRID_SIZE;
@@ -244,14 +255,25 @@
         handleEraser(event); // Obsługa gumki
         return;
       }
-
+    
       if (remainingWarehouses > 0) {
         const rect = canvas.getBoundingClientRect();
         let x = snapToGrid(event.clientX - rect.left);
         let y = snapToGrid(event.clientY - rect.top);
-        const warehouse = { x, y };
-        warehouses.push(warehouse);
-        drawPoint(x, y, 'red');
+    
+        const factoryUnderneath = isOverFactory(x, y); // Sprawdzamy, czy magazyn jest na fabryce
+    
+        if (factoryUnderneath) {
+          // Zmieniamy kolor na zielony, traktując to jako złożony budynek
+          factoryUnderneath.isCombined = true; // Flaga, że fabryka ma magazyn
+          drawPoint(factoryUnderneath.x, factoryUnderneath.y, 'green');
+        } else {
+          // Normalnie dodajemy magazyn, jeśli nie na fabryce
+          const warehouse = { x, y };
+          warehouses.push(warehouse);
+          drawPoint(x, y, 'red');
+        }
+    
         remainingWarehouses--;
         remainingWarehousesSpan.textContent = remainingWarehouses;
         if (remainingWarehouses === 0) {
@@ -267,8 +289,10 @@
       }
     });
     
+    
     document.getElementById('eraserButton').addEventListener('click', () => {
       isEraserMode = !isEraserMode; // Przełączanie trybu gumki
+      console.log(`Tryb gumki: ${isEraserMode ? 'WŁĄCZONY' : 'WYŁĄCZONY'}`);
       const eraserButton = document.getElementById('eraserButton');
       if (isEraserMode) {
         eraserButton.classList.add('active'); // Dodajemy klasę .active, jeśli tryb gumki jest włączony
@@ -279,7 +303,9 @@
     
 
     function handleEraser(event) {
+      console.assert(isEraserMode, 'Funkcja handleEraser() wywołana, gdy tryb gumki nie jest aktywny!');
       if (!isEraserMode) return; // Jeśli tryb gumki nie jest aktywny, nic nie róbmy
+      console.log('Obsługa gumki...');
     
       const rect = canvas.getBoundingClientRect();
       const x = event.clientX - rect.left;
@@ -296,6 +322,7 @@
     
       if (lineIndex !== null) {
         lines.splice(lineIndex, 1); // Usuwamy linię z tablicy lines
+        totalLength = lines.reduce((acc, line) => acc + line.distance, 0); // Obliczamy całkowitą długość tras
         drawAllPoints(); // Rysujemy ponownie, aby odświeżyć canvas bez usuniętej linii
       }
     }
@@ -415,13 +442,25 @@
     function drawAllPoints() {
       ctx.clearRect(0, 0, canvas.width, canvas.height); // Czyścimy canvas przed odrysowaniem wszystkich elementów
       drawGrid(); // Rysowanie siatki
-      factories.forEach(factory => drawPoint(factory.x, factory.y, 'blue'));
-      warehouses.forEach(warehouse => drawPoint(warehouse.x, warehouse.y, 'red'));
+    
+      // Rysujemy wszystkie fabryki
+      factories.forEach(factory => {
+        const color = factory.isCombined ? 'green' : 'blue'; // Zmieniamy kolor, jeśli fabryka ma magazyn
+        drawPoint(factory.x, factory.y, color);
+      });
+    
+      // Rysujemy wszystkie magazyny, które nie są na fabrykach
+      warehouses.forEach(warehouse => {
+        drawPoint(warehouse.x, warehouse.y, 'red');
+      });
+    
+      // Rysujemy wszystkie linie
       lines.forEach(line => {
         drawLine(line.start, line.end); // Odtwarzamy narysowane linie
         drawDistanceLabel(line.start, line.end, line.distance); // Odtwarzamy wyświetlanie odległości nad liniami
       });
     }
+    
 
     function checkConnections() {
       const allPoints = factories.concat(warehouses); // Wszystkie punkty (fabryki i magazyny)
@@ -435,13 +474,17 @@
     
       // Sprawdzamy, czy każdy punkt (fabryka lub magazyn) ma połączenie
       for (let point of allPoints) {
+        // Jeśli punkt jest połączony z magazynem, traktujemy go jako połączony (fabryka + magazyn)
+        if (point.isCombined) continue;
+    
         if (!connectedPoints.has(point)) {
           return false; // Jeśli znajdziemy punkt bez połączenia, zwracamy false
         }
       }
-      
+    
       return true; // Jeśli każdy punkt ma połączenie, zwracamy true
     }
+    
 
     // Rysowanie linii
     function drawLine(start, end) {

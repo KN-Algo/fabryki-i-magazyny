@@ -217,26 +217,7 @@
         return distance <= POINT_RADIUS; // Punkt znajduje się w obrębie fabryki
       });
     }
-
-    function isOccupied(x, y) {
-      // Sprawdzamy, czy punkt znajduje się w pobliżu istniejących fabryk (połączonych z magazynem)
-      const isNearCombinedFactory = factories.some(factory => {
-        const dx = x - factory.x;
-        const dy = y - factory.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        return distance <= POINT_RADIUS && factory.isCombined; // Fabryka połączona z magazynem
-      });
     
-      // Sprawdzamy, czy punkt znajduje się w pobliżu istniejących magazynów
-      const isNearWarehouse = warehouses.some(warehouse => {
-        const dx = x - warehouse.x;
-        const dy = y - warehouse.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        return distance <= POINT_RADIUS; // Magazyn w zasięgu kliknięcia
-      });
-    
-      return isNearCombinedFactory || isNearWarehouse; // Punkt jest zajęty, jeśli jest to połączony budynek lub magazyn
-    }    
 
     // Przyciąganie do siatki
     function snapToGrid(value) {
@@ -253,6 +234,13 @@
         factories.push(factory);
         drawPoint(factory.x, factory.y, 'blue');
       }
+      let EdgePoints, theBestWarehouseConfiguration = startAlgorithm();
+      EdgePoints.forEach((points, i) => {
+        console.log(points);
+        drawLine(points.p1, points.p2);
+      });
+      console.log('theBestWarehouseConfiguration = ${theBestWarehouseConfiguration}');
+      console.log(theBestWarehouseConfiguration);
     }
 
     // Rysowanie punktów fabryk/magazynów
@@ -269,7 +257,13 @@
       if (isCanvasLocked) {
         return; // Jeśli canvas jest zablokowany, nie obsługujemy kliknięcia
       }
-    
+      
+      //get canvas x and y position
+      const rect = canvas.getBoundingClientRect();
+      let x = snapToGrid(event.clientX - rect.left);
+      let y = snapToGrid(event.clientY - rect.top);
+      console.log(`Kliknięto na pozycji: x=${x}, y=${y}`);
+      
       if (isEraserMode) {
         handleEraser(event); // Obsługa gumki
         return;
@@ -279,25 +273,6 @@
         const rect = canvas.getBoundingClientRect();
         let x = snapToGrid(event.clientX - rect.left);
         let y = snapToGrid(event.clientY - rect.top);
-    
-        // Sprawdzamy, czy miejsce jest już zajęte przez magazyn lub połączony budynek
-        if (isOccupied(x, y)) {
-          const toastMixin = Swal.mixin({
-            toast: true,
-            icon: 'warning',
-            title: 'To miejsce jest już zajęte przez inny magazyn!',
-            position: 'top-right',
-            showConfirmButton: false,
-            timer: 2000,
-            timerProgressBar: true,
-            didOpen: (toast) => {
-                toast.addEventListener('mouseenter', Swal.stopTimer)
-                toast.addEventListener('mouseleave', Swal.resumeTimer)
-            }
-          });
-          toastMixin.fire();
-          return; // Przerywamy, jeśli miejsce jest zajęte
-        }
     
         const factoryUnderneath = isOverFactory(x, y); // Sprawdzamy, czy magazyn jest na fabryce
     
@@ -327,7 +302,7 @@
       }
     });
     
-       
+    
     document.getElementById('eraserButton').addEventListener('click', () => {
       isEraserMode = !isEraserMode; // Przełączanie trybu gumki
       console.log(`Tryb gumki: ${isEraserMode ? 'WŁĄCZONY' : 'WYŁĄCZONY'}`);
@@ -523,6 +498,170 @@
       return true; // Jeśli każdy punkt ma połączenie, zwracamy true
     }
     
+    // Number of vertices in the graph 
+    const V = 11;
+    const possiblePlacements = 651 - 3;
+    function getEdgePoints(connections, allBuildings) {
+      let EdgePoints = [];
+      for (let i = V - 1; i > 0; ++i) {
+        let point1 = {x: allBuildings[parant[i]].x, y: allBuildings[parant[i]].y};
+        let point2 = {x: allBuildings[i].x,         y: allBuildings[i].y};
+        EdgePoints.concat({p1: point1, p2: point1});
+      }
+      return EdgePoints;
+    }
+    // daj na wejsciu all fabryki, 
+
+
+/*
+i 0 ,0  0 ,0 ... 0  ,0  0  ,0
+j 20,0  20,0 ... 20 ,0  20 ,0
+k 40,0  40,0 ... 40 ,0  40 ,0
+l 60,0  80,0 ... 600,0  0  ,20
+*/
+
+    function startAlgorithm() {
+      let theBestWarehouseConfiguration = [];
+      let theBestMatirxOfDistances = [];
+      let theBestConnections = [];
+      let theShortestDistance = Infinity;
+      let yi = 0;
+      let yj = 0;
+      let yk = 0;
+      let yl = 0;
+
+      //z logicznego punktu widzenia, te petle sa nie fajne, bo i,j,k,l odpowiadaja za koordynaty, co wplywa na zakres petli
+      for (let i = 0; i < possiblePlacements; i++) {
+        let xi = (i*20)%620;
+        if (xi == 0 && i > 0) yi++;
+        const point1 = {x: xi, y: yi*20};
+        console.log('IIIIIIIIIIIIIIIIIIIIIIIIII');
+        // console.log(point1);
+
+        let possibleJPlacements = possiblePlacements - i;
+        for (let j = i + 1; j < possibleJPlacements; j++) {
+          let xj = (j*20)%620;
+          if (xj == 0 && j > 0) yj++;
+          const point2 = {x: xj, y: yj*20};
+          // console.log(point2);
+          console.log(`JJJJ ${j}`);
+
+          let possibleKPlacements = possiblePlacements - (j - i + 1);
+          for (let k = j + 1; k < possibleKPlacements; k++) {
+            let xk = (k*20)%620;
+            if (xk == 0 && k > 0) yk++;
+            const point3 = {x: xk, y: yk*20};
+            // console.log(point3);
+            // console.log(`K ${k}`);
+
+            let possibleLPlacements = possiblePlacements - (k - j + 1);
+            for (let l = k + 1; l < possibleLPlacements; l++) {
+              let xl = (l*20)%620;
+              if (xl == 0 && l > 0) yl++;
+              const point4 = {x: xl, y: yl*20};
+              // console.log(point4);
+
+              const warehouseConfiguration = [ //all axis x20, xmod 600, ymod 400
+                point1,
+                point2,
+                point3,
+                point4
+              ];
+              
+              const allBuildings = factories.concat(warehouseConfiguration); //tu razem factories i warehouses
+              // console.log('allBuildings');
+              // console.log(allBuildings);
+              let matirxOfDistances = [[],[],[],[],[],[],[],[],[],[],[]]; //matrix size 11x11 with all distances, diagonal is 0
+              for (let ii = 0; ii < V; ii++) {
+                for (let jj = 0; jj < V; jj++) {
+                  matirxOfDistances[ii][jj] = calculateDistance(allBuildings[ii],allBuildings[jj]);
+                }
+              }
+              let currentDistance, connections = primMST(matirxOfDistances);
+              if (currentDistance < theShortestDistance) {
+                theBestWarehouseConfiguration = warehouseConfiguration;
+                theBestMatirxOfDistances = matirxOfDistances;
+                theBestConnections = connections;
+                theShortestDistance = currentDistance;
+              }
+            }
+          }
+        }
+      }
+      const EdgePoints = getEdgePoints(connections, allBuildings);
+      return EdgePoints, theBestWarehouseConfiguration;
+    }
+
+
+    // A utility function to find the vertex with 
+    // minimum key value, from the set of vertices 
+    // not yet included in MST 
+    function minKey(key, mstSet) 
+    { 
+      // Initialize min value 
+      let min = Number.MAX_VALUE, min_index; 
+
+      for (let v = 0; v < V; v++) 
+        if (mstSet[v] == false && key[v] < min) 
+          min = key[v], min_index = v; 
+
+      return min_index; 
+    } 
+
+    function calculateTotalDistance(parent, graph){
+      let totalDistance = 0;
+      for (let i = V - 1; i > 0; --i) 
+        totalDistance += graph[parent[i]][i];
+      return totalDistance;
+    }
+
+    // Function to construct and print MST for 
+    // a graph represented using adjacency 
+    // matrix representation 
+    function primMST(graph) 
+    { 
+      // Array to store constructed MST 
+      let parent = []; 
+      
+      // Key values used to pick minimum weight edge in cut 
+      let key = []; 
+      
+      // To represent set of vertices included in MST 
+      let mstSet = []; 
+
+      // Initialize all keys as INFINITE 
+      for (let i = 0; i < V; i++) 
+        key[i] = Number.MAX_VALUE, mstSet[i] = false; 
+
+      // Always include first 1st vertex in MST. 
+      // Make key 0 so that this vertex is picked as first vertex. 
+      key[0] = 0; 
+      parent[0] = -1; // First node is always root of MST 
+
+      // The MST will have V vertices 
+      for (let count = 0; count < V - 1; count++)
+      { 
+        // Pick the minimum key vertex from the 
+        // set of vertices not yet included in MST 
+        let u = minKey(key, mstSet); 
+
+        // Add the picked vertex to the MST Set 
+        mstSet[u] = true; 
+
+        // Update key value and parent index of 
+        // the adjacent vertices of the picked vertex. 
+        // Consider only those vertices which are not 
+        // yet included in MST 
+        for (let v = 0; v < V; v++) 
+          // graph[u][v] is non zero only for adjacent vertices of m 
+          // mstSet[v] is false for vertices not yet included in MST 
+          // Update the key only if graph[u][v] is smaller than key[v] 
+          if (graph[u][v] && mstSet[v] == false && graph[u][v] < key[v]) 
+            parent[v] = u, key[v] = graph[u][v]; 
+
+      } 
+      return calculateTotalDistance(parent, graph), parent;
+    } 
 
     // Rysowanie linii
     function drawLine(start, end) {

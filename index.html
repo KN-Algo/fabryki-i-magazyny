@@ -234,7 +234,9 @@
         factories.push(factory);
         drawPoint(factory.x, factory.y, 'blue');
       }
-      let EdgePoints, theBestWarehouseConfiguration = startAlgorithm();
+      let returnVal = startAlgorithm();
+      let EdgePoint = returnVal[0];
+      let theBestWarehouseConfiguration = returnVal[1];
       EdgePoints.forEach((points, i) => {
         console.log(points);
         drawLine(points.p1, points.p2);
@@ -581,8 +583,8 @@ l 60,0  80,0 ... 600,0  0  ,20
                 }
               }
               let currentDistance, connections = primMST(matirxOfDistances);
-              console.log(`currentDistance ${currentDistance}`);
-              console.log(`theShortestDistance ${theShortestDistance}`);
+              // console.log(`currentDistance ${currentDistance}`);
+              // console.log(`theShortestDistance ${theShortestDistance}`);
 
               if (currentDistance < theShortestDistance) {
                 console.log(`currentBESTDistance ${currentDistance}`);
@@ -600,7 +602,7 @@ l 60,0  80,0 ... 600,0  0  ,20
       console.log(`theBestConnections ${theBestConnections}`);
 
       const EdgePoints = getEdgePoints(theBestConnections, theBestWarehouseConfiguration);
-      return EdgePoints, theBestWarehouseConfiguration;
+      return [EdgePoints, theBestWarehouseConfiguration];
     }
 
 

@@ -501,10 +501,13 @@
     // Number of vertices in the graph 
     const V = 11;
     const possiblePlacements = 651 - 3;
-    function getEdgePoints(connections, allBuildings) {
+    function getEdgePoints(parent, allBuildings) {
+      
+      console.log(`allBuildings ${allBuildings}`);
+      console.log(`parent ${parent}`);
       let EdgePoints = [];
       for (let i = V - 1; i > 0; ++i) {
-        let point1 = {x: allBuildings[parant[i]].x, y: allBuildings[parant[i]].y};
+        let point1 = {x: allBuildings[parent[i]].x, y: allBuildings[parent[i]].y};
         let point2 = {x: allBuildings[i].x,         y: allBuildings[i].y};
         EdgePoints.concat({p1: point1, p2: point1});
       }
@@ -535,7 +538,7 @@ l 60,0  80,0 ... 600,0  0  ,20
         let xi = (i*20)%620;
         if (xi == 0 && i > 0) yi++;
         const point1 = {x: xi, y: yi*20};
-        console.log('IIIIIIIIIIIIIIIIIIIIIIIIII');
+        console.log(`IIIIIIIIIIII ${i}`);
         // console.log(point1);
 
         let possibleJPlacements = possiblePlacements - i;
@@ -578,7 +581,11 @@ l 60,0  80,0 ... 600,0  0  ,20
                 }
               }
               let currentDistance, connections = primMST(matirxOfDistances);
+              console.log(`currentDistance ${currentDistance}`);
+              console.log(`theShortestDistance ${theShortestDistance}`);
+
               if (currentDistance < theShortestDistance) {
+                console.log(`currentBESTDistance ${currentDistance}`);
                 theBestWarehouseConfiguration = warehouseConfiguration;
                 theBestMatirxOfDistances = matirxOfDistances;
                 theBestConnections = connections;
@@ -588,7 +595,11 @@ l 60,0  80,0 ... 600,0  0  ,20
           }
         }
       }
-      const EdgePoints = getEdgePoints(connections, allBuildings);
+      theBestWarehouseConfiguration = theBestWarehouseConfiguration.concat(factories);
+      console.log(`theBestWarehouseConfiguration ${theBestWarehouseConfiguration}`);
+      console.log(`theBestConnections ${theBestConnections}`);
+
+      const EdgePoints = getEdgePoints(theBestConnections, theBestWarehouseConfiguration);
       return EdgePoints, theBestWarehouseConfiguration;
     }
 
@@ -660,6 +671,11 @@ l 60,0  80,0 ... 600,0  0  ,20
             parent[v] = u, key[v] = graph[u][v]; 
 
       } 
+
+      console.log(`parent ${parent}`);
+      console.log(`graph ${graph}`);
+      console.log(`calculateTotalDistance(parent, graph) ${calculateTotalDistance(parent, graph)}`);
+
       return calculateTotalDistance(parent, graph), parent;
     } 
 

@@ -504,9 +504,6 @@
     const V = 11;
     const possiblePlacements = 651 - 3;
     function getEdgePoints(parent, allBuildings) {
-      
-      console.log(`allBuildings ${allBuildings}`);
-      console.log(`parent ${parent}`);
       let EdgePoints = [];
       for (let i = V - 1; i > 0; ++i) {
         let point1 = {x: allBuildings[parent[i]].x, y: allBuildings[parent[i]].y};
@@ -582,7 +579,9 @@ l 60,0  80,0 ... 600,0  0  ,20
                   matirxOfDistances[ii][jj] = calculateDistance(allBuildings[ii],allBuildings[jj]);
                 }
               }
-              let currentDistance, connections = primMST(matirxOfDistances);
+              let primMSTres = primMST(matirxOfDistances);
+              let currentDistance = primMSTres[0];
+              let connections = primMSTres[1];
               // console.log(`currentDistance ${currentDistance}`);
               // console.log(`theShortestDistance ${theShortestDistance}`);
 
@@ -674,11 +673,11 @@ l 60,0  80,0 ... 600,0  0  ,20
 
       } 
 
-      console.log(`parent ${parent}`);
-      console.log(`graph ${graph}`);
-      console.log(`calculateTotalDistance(parent, graph) ${calculateTotalDistance(parent, graph)}`);
+      // console.log(`parent ${parent}`);
+      // console.log(`graph ${graph}`);
+      // console.log(`calculateTotalDistance(parent, graph) ${calculateTotalDistance(parent, graph)}`);
 
-      return calculateTotalDistance(parent, graph), parent;
+      return [calculateTotalDistance(parent, graph), parent];
     } 
 
     // Rysowanie linii

@@ -257,16 +257,16 @@
       factories.push(factory);
       drawPoint(factory.x, factory.y, 'blue');
 
-      // let returnVal = startAlgorithm();
-      // let EdgePoints = returnVal[0];
-      // let theShortestDistance = returnVal[1];
-      // EdgePoints.forEach((points, i) => {
-      //   console.log(points);
-      //   drawLine(points.p1, points.p2);
-      // });
-      // console.log(`theShortestDistance = ${theShortestDistance}`);
-      // console.log(`EdgePoints = ${EdgePoints}`);
-      // console.log(`theShortestDistance = ${theShortestDistance}`);
+      let returnVal = startAlgorithm();
+      let EdgePoints = returnVal[0];
+      let theShortestDistance = returnVal[1];
+      EdgePoints.forEach((points, i) => {
+        console.log(points);
+        drawLine(points.p1, points.p2);
+      });
+      console.log(`theShortestDistance = ${theShortestDistance}`);
+      console.log(`EdgePoints = ${EdgePoints}`);
+      console.log(`theShortestDistance = ${theShortestDistance}`);
     }
 
     // Rysowanie punktów fabryk/magazynów
@@ -639,6 +639,10 @@ l 60,0  80,0 ... 600,0  0  ,20
             }
           }
         }
+        console.log(`theBestWarehouseConfiguration ${theBestWarehouseConfiguration}`);
+        theBestWarehouseConfiguration.forEach(element => {
+          console.log(`element.x ${element.x}, element.y ${element.y}`);
+        });
       }
       // algorytm prima zle dziala chyab, konfiguracja magazynwo zla 
       console.log(`allBuildings ${theBestWarehouseConfiguration}`);

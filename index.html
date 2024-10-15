@@ -170,7 +170,7 @@
         }
       }).then((result) => {
         document.getElementById('ranking-a').href = `ranking.html?username=${username}`;
-        startTimer(180); // Uruchamiamy timer na 3 minuty
+        startTimer(1800); // Uruchamiamy timer na 3 minuty
       });
     };
     
@@ -227,22 +227,46 @@
     // Losowe generowanie fabryk, przyciągane do siatki
     function generateFactories(numFactories) {
       drawGrid();
-      for (let i = 0; i < numFactories; i++) {
-        let x = snapToGrid(Math.random() * canvas.width);
-        let y = snapToGrid(Math.random() * canvas.height);
-        const factory = { x, y };
-        factories.push(factory);
-        drawPoint(factory.x, factory.y, 'blue');
-      }
-      let returnVal = startAlgorithm();
-      let EdgePoint = returnVal[0];
-      let theBestWarehouseConfiguration = returnVal[1];
-      EdgePoints.forEach((points, i) => {
-        console.log(points);
-        drawLine(points.p1, points.p2);
-      });
-      console.log('theBestWarehouseConfiguration = ${theBestWarehouseConfiguration}');
-      console.log(theBestWarehouseConfiguration);
+      // for (let i = 0; i < numFactories; i++) {
+      //   let x = snapToGrid(Math.random() * canvas.width);
+      //   let y = snapToGrid(Math.random() * canvas.height);
+      //   const factory = { x, y };
+      //   factories.push(factory);
+      //   drawPoint(factory.x, factory.y, 'blue');
+      // }
+
+      let factory = { x:60, y:140 };
+      factories.push(factory);
+      drawPoint(factory.x, factory.y, 'blue');
+      factory = { x:100, y:340 };
+      factories.push(factory);
+      drawPoint(factory.x, factory.y, 'blue');
+      factory = { x:140, y:40 };
+      factories.push(factory);
+      drawPoint(factory.x, factory.y, 'blue');
+      factory = { x:200, y:260 };
+      factories.push(factory);
+      drawPoint(factory.x, factory.y, 'blue');
+      factory = { x:560, y:20 };
+      factories.push(factory);
+      drawPoint(factory.x, factory.y, 'blue');
+      factory = { x:600, y:380 };
+      factories.push(factory);
+      drawPoint(factory.x, factory.y, 'blue');
+      factory = { x:460, y:400 };
+      factories.push(factory);
+      drawPoint(factory.x, factory.y, 'blue');
+
+      // let returnVal = startAlgorithm();
+      // let EdgePoints = returnVal[0];
+      // let theShortestDistance = returnVal[1];
+      // EdgePoints.forEach((points, i) => {
+      //   console.log(points);
+      //   drawLine(points.p1, points.p2);
+      // });
+      // console.log(`theShortestDistance = ${theShortestDistance}`);
+      // console.log(`EdgePoints = ${EdgePoints}`);
+      // console.log(`theShortestDistance = ${theShortestDistance}`);
     }
 
     // Rysowanie punktów fabryk/magazynów
@@ -505,90 +529,110 @@
     const possiblePlacements = 651 - 3;
     function getEdgePoints(parent, allBuildings) {
       let EdgePoints = [];
-      for (let i = V - 1; i > 0; ++i) {
+      for (let i = V - 1; i > 0; --i) {
         let point1 = {x: allBuildings[parent[i]].x, y: allBuildings[parent[i]].y};
         let point2 = {x: allBuildings[i].x,         y: allBuildings[i].y};
         EdgePoints.concat({p1: point1, p2: point1});
       }
       return EdgePoints;
     }
-    // daj na wejsciu all fabryki, 
-
-
 /*
 i 0 ,0  0 ,0 ... 0  ,0  0  ,0
 j 20,0  20,0 ... 20 ,0  20 ,0
 k 40,0  40,0 ... 40 ,0  40 ,0
 l 60,0  80,0 ... 600,0  0  ,20
 */
-
     function startAlgorithm() {
       let theBestWarehouseConfiguration = [];
       let theBestMatirxOfDistances = [];
       let theBestConnections = [];
       let theShortestDistance = Infinity;
       let yi = 0;
-      let yj = 0;
-      let yk = 0;
-      let yl = 0;
+      let currentDistance = 0;
+
+      let iloscWykPrima = 0;
+      //POSSIBLE PLACEMENTS ARE WRONG, TO IT IN OTHER WAY
 
       //z logicznego punktu widzenia, te petle sa nie fajne, bo i,j,k,l odpowiadaja za koordynaty, co wplywa na zakres petli
       for (let i = 0; i < possiblePlacements; i++) {
         let xi = (i*20)%620;
         if (xi == 0 && i > 0) yi++;
-        const point1 = {x: xi, y: yi*20};
+        let point1 = {x: xi, y: yi*20};
+       
         console.log(`IIIIIIIIIIII ${i}`);
-        // console.log(point1);
+
+        if(xi == 600 && yi == 360)
+        {
+          console.log(`xi ${xi} yi ${yi}`);
+          break;
+        }
+        let yj = 0;
 
         let possibleJPlacements = possiblePlacements - i;
         for (let j = i + 1; j < possibleJPlacements; j++) {
           let xj = (j*20)%620;
           if (xj == 0 && j > 0) yj++;
-          const point2 = {x: xj, y: yj*20};
-          // console.log(point2);
-          console.log(`JJJJ ${j}`);
+          let point2 = {x: xj, y: yj*20};
+ 
+          if(xj == 600 && yj == 380)
+          {
+            console.log(`xj ${xj} yj ${yj}`);
+            break;
+          }
+          let yk = 0;
 
           let possibleKPlacements = possiblePlacements - (j - i + 1);
           for (let k = j + 1; k < possibleKPlacements; k++) {
             let xk = (k*20)%620;
             if (xk == 0 && k > 0) yk++;
-            const point3 = {x: xk, y: yk*20};
-            // console.log(point3);
-            // console.log(`K ${k}`);
+            let point3 = {x: xk, y: yk*20};
+
+            if(xk == 600 && yk == 400)
+            {
+              console.log(`xk ${xk} yk ${yk}`);
+              break;
+            }
+            let yl = 0;
 
             let possibleLPlacements = possiblePlacements - (k - j + 1);
             for (let l = k + 1; l < possibleLPlacements; l++) {
               let xl = (l*20)%620;
               if (xl == 0 && l > 0) yl++;
-              const point4 = {x: xl, y: yl*20};
-              // console.log(point4);
+              let point4 = {x: xl, y: yl*20};
 
-              const warehouseConfiguration = [ //all axis x20, xmod 600, ymod 400
+              if(yl == 420) //0 - 420 
+              {
+                console.log(`xl ${xl} yl ${yl}`);
+                break;
+              }
+              currentDistance = 0;
+              let warehouseConfiguration = [ //all axis x20, xmod 620, ymod 420
                 point1,
                 point2,
                 point3,
                 point4
               ];
               
-              const allBuildings = factories.concat(warehouseConfiguration); //tu razem factories i warehouses
-              // console.log('allBuildings');
-              // console.log(allBuildings);
-              let matirxOfDistances = [[],[],[],[],[],[],[],[],[],[],[]]; //matrix size 11x11 with all distances, diagonal is 0
+              let allBuildings = factories.concat(warehouseConfiguration); //tu razem factories i warehouses
+              let matrixOfDistances = [[],[],[],[],[],[],[],[],[],[],[]]; //matrix size 11x11 with all distances, diagonal is 0
+              let totalSum = 0; // initialize total sum
+
               for (let ii = 0; ii < V; ii++) {
                 for (let jj = 0; jj < V; jj++) {
-                  matirxOfDistances[ii][jj] = calculateDistance(allBuildings[ii],allBuildings[jj]);
+                  matrixOfDistances[ii][jj] = calculateDistance(allBuildings[ii], allBuildings[jj]);
+                  totalSum += matrixOfDistances[ii][jj]; // add each distance to the total sum
                 }
               }
-              let primMSTres = primMST(matirxOfDistances);
-              let currentDistance = primMSTres[0];
+
+              let primMSTres = primMST(matrixOfDistances);
+              iloscWykPrima++;
+              currentDistance = primMSTres[0];
               let connections = primMSTres[1];
-              // console.log(`currentDistance ${currentDistance}`);
-              // console.log(`theShortestDistance ${theShortestDistance}`);
 
               if (currentDistance < theShortestDistance) {
                 console.log(`currentBESTDistance ${currentDistance}`);
-                theBestWarehouseConfiguration = warehouseConfiguration;
-                theBestMatirxOfDistances = matirxOfDistances;
+                theBestWarehouseConfiguration = allBuildings;
+                theBestMatrixOfDistances = matrixOfDistances;
                 theBestConnections = connections;
                 theShortestDistance = currentDistance;
               }
@@ -596,88 +640,66 @@ l 60,0  80,0 ... 600,0  0  ,20
           }
         }
       }
-      theBestWarehouseConfiguration = theBestWarehouseConfiguration.concat(factories);
-      console.log(`theBestWarehouseConfiguration ${theBestWarehouseConfiguration}`);
+      // algorytm prima zle dziala chyab, konfiguracja magazynwo zla 
+      console.log(`allBuildings ${theBestWarehouseConfiguration}`);
+      console.log(`allBuildings[0] ${theBestWarehouseConfiguration[0]}`);
+      theBestWarehouseConfiguration.concat(factories);
+      console.log(`theBestWarehouseConfiguration ${theBestWarehouseConfiguration}`); // TRZEBA to wypisac ladniej
       console.log(`theBestConnections ${theBestConnections}`);
 
-      const EdgePoints = getEdgePoints(theBestConnections, theBestWarehouseConfiguration);
-      return [EdgePoints, theBestWarehouseConfiguration];
+      console.log(`iloscWykPrima ${iloscWykPrima}`);
+
+      let EdgePoints = getEdgePoints(theBestConnections, theBestWarehouseConfiguration);
+      return [EdgePoints, theShortestDistance];
     }
 
-
-    // A utility function to find the vertex with 
-    // minimum key value, from the set of vertices 
-    // not yet included in MST 
     function minKey(key, mstSet) 
     { 
-      // Initialize min value 
-      let min = Number.MAX_VALUE, min_index; 
-
+      let min = Number.MAX_VALUE;
+      let min_index = -1; 
       for (let v = 0; v < V; v++) 
         if (mstSet[v] == false && key[v] < min) 
-          min = key[v], min_index = v; 
-
+        {
+          min = key[v];
+          min_index = v; 
+        }
       return min_index; 
     } 
 
-    function calculateTotalDistance(parent, graph){
+    function calculateTotalDistance(parent, graph)
+    {
       let totalDistance = 0;
-      for (let i = V - 1; i > 0; --i) 
+      for (let i = V - 1; i > 0; --i) {
         totalDistance += graph[parent[i]][i];
+      }
       return totalDistance;
     }
 
-    // Function to construct and print MST for 
-    // a graph represented using adjacency 
-    // matrix representation 
     function primMST(graph) 
     { 
-      // Array to store constructed MST 
       let parent = []; 
-      
-      // Key values used to pick minimum weight edge in cut 
       let key = []; 
-      
-      // To represent set of vertices included in MST 
       let mstSet = []; 
+      for (let i = 0; i < V; i++) {
+        key[i] = Number.MAX_VALUE;
+        mstSet[i] = false; 
+      }
 
-      // Initialize all keys as INFINITE 
-      for (let i = 0; i < V; i++) 
-        key[i] = Number.MAX_VALUE, mstSet[i] = false; 
-
-      // Always include first 1st vertex in MST. 
-      // Make key 0 so that this vertex is picked as first vertex. 
       key[0] = 0; 
       parent[0] = -1; // First node is always root of MST 
-
-      // The MST will have V vertices 
       for (let count = 0; count < V - 1; count++)
       { 
-        // Pick the minimum key vertex from the 
-        // set of vertices not yet included in MST 
         let u = minKey(key, mstSet); 
-
-        // Add the picked vertex to the MST Set 
         mstSet[u] = true; 
-
-        // Update key value and parent index of 
-        // the adjacent vertices of the picked vertex. 
-        // Consider only those vertices which are not 
-        // yet included in MST 
         for (let v = 0; v < V; v++) 
-          // graph[u][v] is non zero only for adjacent vertices of m 
-          // mstSet[v] is false for vertices not yet included in MST 
-          // Update the key only if graph[u][v] is smaller than key[v] 
-          if (graph[u][v] && mstSet[v] == false && graph[u][v] < key[v]) 
-            parent[v] = u, key[v] = graph[u][v]; 
-
+          if (u != v && mstSet[v] == false && graph[u][v] < key[v]) 
+          {
+            parent[v] = u;
+            key[v] = graph[u][v];
+          } 
       } 
-
-      // console.log(`parent ${parent}`);
-      // console.log(`graph ${graph}`);
-      // console.log(`calculateTotalDistance(parent, graph) ${calculateTotalDistance(parent, graph)}`);
-
-      return [calculateTotalDistance(parent, graph), parent];
+      let dist = calculateTotalDistance(parent, graph)
+      return [dist, parent];
     } 
 
     // Rysowanie linii
@@ -729,7 +751,6 @@ l 60,0  80,0 ... 600,0  0  ,20
         }
       }, 1000);
     }
-    
 
     document.getElementById('endGameButton').addEventListener('click', () => {
       // Sprawdzamy, czy wszystkie punkty mają połączenie
@@ -796,10 +817,8 @@ l 60,0  80,0 ... 600,0  0  ,20
       });
     });
     
-    
     // Uruchomienie gry
     generateFactories(7); // Generowanie fabryk, np. 7
-
   </script>
 </body>
 </html>

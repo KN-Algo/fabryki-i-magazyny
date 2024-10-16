@@ -6,7 +6,7 @@ $database = new Database();
 $index = null;
 $username = null;
 $time = null;
-$optimal_distance = 500;
+$optimal_distance = 1219;
 $user_distance = null;
 $distance_diff = null;
 

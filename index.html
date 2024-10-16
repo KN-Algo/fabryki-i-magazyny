@@ -100,6 +100,7 @@
 
     let index = null;
     let username = null;
+    let optimalDistance = 1219;
 
     // Inicjalizacja okna powitalnego
     window.onload = () => {
@@ -246,13 +247,34 @@
     // Losowe generowanie fabryk, przyciągane do siatki
     function generateFactories(numFactories) {
       drawGrid();
-      for (let i = 0; i < numFactories; i++) {
+      /*for (let i = 0; i < numFactories; i++) {
         let x = snapToGrid(Math.random() * canvas.width);
         let y = snapToGrid(Math.random() * canvas.height);
         const factory = { x, y };
         factories.push(factory);
         drawPoint(factory.x, factory.y, 'blue');
-      }
+      }*/
+      let factory = { x:60, y:140 };
+      factories.push(factory);
+      drawPoint(factory.x, factory.y, 'blue');
+      factory = { x:100, y:340 };
+      factories.push(factory);
+      drawPoint(factory.x, factory.y, 'blue');
+      factory = { x:140, y:40 };
+      factories.push(factory);
+      drawPoint(factory.x, factory.y, 'blue');
+      factory = { x:200, y:260 };
+      factories.push(factory);
+      drawPoint(factory.x, factory.y, 'blue');
+      factory = { x:560, y:20 };
+      factories.push(factory);
+      drawPoint(factory.x, factory.y, 'blue');
+      factory = { x:600, y:380 };
+      factories.push(factory);
+      drawPoint(factory.x, factory.y, 'blue');
+      factory = { x:460, y:400 };
+      factories.push(factory);
+      drawPoint(factory.x, factory.y, 'blue');
     }
 
     // Rysowanie punktów fabryk/magazynów
@@ -602,7 +624,7 @@
           const timeElapsed = 180 - timeRemaining; // Obliczenie czasu, który upłynął
           Swal.fire({
             title: 'Gra zakończona!',
-            text: `Upłynęło: ${Math.round(timeElapsed)} sekund.\nCałkowita długość tras: ${Math.round(totalLength)}.`,
+            text: `Upłynęło: ${Math.round(timeElapsed)} sekund.\nTwoja odległość była o ${Math.abs(totalLength - optimalDistance).toFixed(0)} jednostek ${totalLength > optimalDistance ? 'większa' : 'mniejsza'} od optymalnej.`,
             icon: 'success',
             confirmButtonText: 'OK'
           }).then(() => {
